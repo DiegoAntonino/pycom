@@ -58,6 +58,7 @@ def request(method, url, json=None, headers={}, retry_num=5, retry_min_msec=500)
         l = s.readline()
         protover, status, msg = l.split(None, 2)
         status = int(status)
+        #print("###########",protover, status, msg )
 
         #Read all headers fields
         while True:
@@ -74,6 +75,7 @@ def request(method, url, json=None, headers={}, retry_num=5, retry_min_msec=500)
         'status_code':  status,
         'reason': str(msg.rstrip())
         }
+        #print("RESP: ", resp)
         return resp
     finally:
         s.close()
