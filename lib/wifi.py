@@ -1,16 +1,11 @@
 import machine
 from network import WLAN
+import conf
 
 class WIFI():
     """docstring for WIFI."""
     def __init__(self):
-        known_nets = {
-<<<<<<< HEAD
-            "Mateo's Kingdom": {"pwd": "b9MCU3sv"}
-=======
-            'SSID': {'pwd': '************'}
->>>>>>> 165f171165d86a4e2998f025816f4b43bc76a38e
-        }
+        known_nets = conf.known_nets
 
         wlan = WLAN(mode=WLAN.STA)
         print("Scanning for known wifi nets")
@@ -30,4 +25,4 @@ class WIFI():
             print("Connected to '"+net_to_use+"' with IP address: " + wlan.ifconfig()[0])
 
         except Exception as e:
-            print("!!!!! Failed to connect to any known network")
+            print("Failed to connect to any known network. Error: {}".format(e))

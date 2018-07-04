@@ -1,6 +1,7 @@
 import pycom
 import machine
 import urequests as requests
+impot conf
 
 def datetime_toIso(time):
     return "{}-{}-{}T{}:{}:{}".format(time[0], time[1], time[2], time[3], time[4], time[5])
@@ -15,7 +16,7 @@ def led_error():
 def send_values(body, error):
     answer = False
     #URL = "https://run-east.att.io/b8c5703c726bc/b59e0c890712/fc61e0e361d821e/in/flow/test"
-    URL = "http://192.168.2.23:39500"
+    URL = conf.ST_IP_PORT
     headers = {"Content-Type" : "application/json"}
 
     try:
