@@ -1,20 +1,17 @@
 import pycom
-import machine
-import urequests as requests
-import conf
 import utime
+from lib import urequests as requests
+from conf import conf
 
 
-def datetime_toIso(time):
+def datetime_to_iso(time):
     return "{}-{}-{}T{}:{}:{}".format(time[0], time[1], time[2], time[3], time[4], time[5])
 
 
-def led_error():
+def led_error(color=0x190000):
     if pycom.heartbeat():
         pycom.heartbeat(False)
-    pycom.rgbled(0x190000)
-#    return True
-#    machine.reset()
+    pycom.rgbled(color)
 
 
 def send_values(body, send_failed=False):
@@ -25,7 +22,7 @@ def send_values(body, send_failed=False):
     try:
         r = requests.request("POST", URL, body, headers)
     except Exception as e:
-        print("{} - error: 'tools-send_values' - message: Exception - {}".format(datetime_toIso(utime.localtime()), e))
+        print("{} - error: 'tools-send_values' - message: Exception - {}".format(datetime_to_iso(utime.localtime()), e))
         led_error()
         failed = True
     else:
@@ -35,7 +32,7 @@ def send_values(body, send_failed=False):
                 utime.sleep(1)
                 pycom.heartbeat(False)
         else:
-            print("{} - error: '{}' - message: {}".format(datetime_toIso(utime.localtime()), r.get("status_code"), r.get("reason")))
+            print("{} - error: '{}' - message: {}".format(datetime_to_iso(utime.localtime()), r.get("status_code"), r.get("reason")))
             led_error()
             failed = True
     finally:

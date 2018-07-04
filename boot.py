@@ -12,4 +12,4 @@ if machine.reset_cause() != machine.SOFT_RESET:
     rtc.ntp_sync("pool.ntp.org")
     pycom.heartbeat(False)
     utime.sleep(5)
-    print("DateTime(UTC): {}".format(tools.datetime_toIso(rtc.now())))
+    print("DateTime(UTC): {}".format(tools.datetime_to_iso(rtc.now())))
