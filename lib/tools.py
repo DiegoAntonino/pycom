@@ -28,9 +28,11 @@ def send_values(body, send_failed=False):
     else:
         if r.get('status_code') == 202 or r.get('status_code') == 200:
             if send_failed:
-                pycom.heartbeat(True)
-                utime.sleep(1)
-                pycom.heartbeat(False)
+                pycom.rgbled(0)
+                #pycom.heartbeat(True)
+                #utime.sleep(1)
+                #pycom.heartbeat(False)
+
         else:
             print("{} - error: '{}' - message: {}".format(datetime_to_iso(utime.localtime()), r.get("status_code"), r.get("reason")))
             led_error()
