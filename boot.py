@@ -8,7 +8,7 @@ import tools
 
 if machine.reset_cause() != machine.SOFT_RESET:
     WIFI()
-    #initialize DateTIme
+    #initialize DateTime
     rtc = machine.RTC()
     rtc.ntp_sync("pool.ntp.org")
     pycom.heartbeat(False)

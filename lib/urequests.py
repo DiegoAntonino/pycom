@@ -1,8 +1,9 @@
 import usocket
 import ussl
-import time
+import utime
 import ujson
 import tools
+
 
 def request(method, url, json=None, headers={}, retry_num=5, retry_min_msec=500):
     try:
@@ -26,13 +27,13 @@ def request(method, url, json=None, headers={}, retry_num=5, retry_min_msec=500)
     retry = 0
     con_status, s = connect_socket(proto, host, port)
     while retry < retry_num and not con_status:
-        time.sleep(pow(2, retry)*retry_min_msec/1000)
+        utime.sleep(pow(2, retry)*retry_min_msec/1000)
         #Debug
         #print("{} - retry: {}".format(tools.datetime_toIso(time.localtime()), retry) )
         con_status, s = connect_socket(proto, host, port)
-        retry+=1
+        retry += 1
     if retry >= retry_num and not con_status:
-        raise Exception("Socker Connection Error")
+        raise Exception("Socket Connection Error")
 
     # Send headers and body
     try:
@@ -80,6 +81,7 @@ def request(method, url, json=None, headers={}, retry_num=5, retry_min_msec=500)
     finally:
         s.close()
 
+
 def connect_socket(proto, host, port):
     try:
         s = usocket.socket()
@@ -88,8 +90,7 @@ def connect_socket(proto, host, port):
         s.connect(usocket.getaddrinfo(host, port)[0][-1])
     except Exception as e:
         s.close()
-        #Debug
-        #print(e)
+        print("enable to open socket. Exception: {}".format(e))
         return [False, s]
     else:
         return [True, s]

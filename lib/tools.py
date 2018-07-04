@@ -1,39 +1,42 @@
 import pycom
 import machine
 import urequests as requests
-impot conf
+import conf
+import utime
+
 
 def datetime_toIso(time):
     return "{}-{}-{}T{}:{}:{}".format(time[0], time[1], time[2], time[3], time[4], time[5])
+
 
 def led_error():
     if pycom.heartbeat():
         pycom.heartbeat(False)
     pycom.rgbled(0x190000)
-    return True
+#    return True
 #    machine.reset()
 
-def send_values(body, error):
-    answer = False
-    #URL = "https://run-east.att.io/b8c5703c726bc/b59e0c890712/fc61e0e361d821e/in/flow/test"
+
+def send_values(body, send_failed=False):
+    failed = False
     URL = conf.ST_IP_PORT
-    headers = {"Content-Type" : "application/json"}
+    headers = {"Content-Type": "application/json"}
 
     try:
         r = requests.request("POST", URL, body, headers)
     except Exception as e:
-        print("{} - error: 'tools-send_values' - message: Exception - {}".format(tools.datetime_toIso(time.localtime()), e))
-        error = tools.led_error()
+        print("{} - error: 'tools-send_values' - message: Exception - {}".format(datetime_toIso(utime.localtime()), e))
+        led_error()
+        failed = True
     else:
         if r.get('status_code') == 202 or r.get('status_code') == 200:
-            if error:
-                error = False
+            if send_failed:
                 pycom.heartbeat(True)
-                time.sleep(1)
+                utime.sleep(1)
                 pycom.heartbeat(False)
-            answer = True
         else:
-            print("{} - error: '{}' - message: {}".format(tools.datetime_toIso(time.localtime()), r.get("status_code"), r.get("reason")))
-            error = tools.led_error()
+            print("{} - error: '{}' - message: {}".format(datetime_toIso(utime.localtime()), r.get("status_code"), r.get("reason")))
+            led_error()
+            failed = True
     finally:
-        return answer, error
+        return failed

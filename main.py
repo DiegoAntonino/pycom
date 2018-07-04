@@ -1,6 +1,5 @@
-# main.py -- put your code here!
 import pycom
-import time
+import utime
 import machine
 from tsl2561 import TSL2561
 import tools
@@ -8,30 +7,26 @@ import tools
 light_sensor = TSL2561()
 retry_num = 5
 retry_min_msec = 200
-error = False
 
-time.sleep(1)
+utime.sleep(1)
 print("Starting Main loop")
 while True:
-    lux  = light_sensor.get_lux()
+    lux = light_sensor.get_lux()
     body = {
-        'lux': float(lux)
+        'lux': lux
     }
-    #print(tools.datetime_toIso(time.localtime()),"-", body)
 
-    send_completed, error = tools.send_values(body, error)
+    send_failed = tools.send_values(body)
     retry = 0
-    while retry < retry_num and not send_completed:
-        time.sleep(pow(2, retry)*retry_min_msec/1000)
-        #Debug
-        #print("{} - retry: {}".format(tools.datetime_toIso(time.localtime()), retry) )
-        send_completed, error = tools.send_values(body, error)
-        retry+=1
+    while retry < retry_num and send_failed:
+        utime.sleep(pow(2, retry)*retry_min_msec/1000)
+        send_failed = tools.send_values(body, send_failed)
+        retry += 1
 
-    if retry >= retry_num and not send_completed:
-        print ("Tried: {} times and it coudn't send values. Waiting 5 min".format(retry))
+    if retry >= retry_num and send_failed:
+        print("Tried: {} times and it coudn't send values.".format(retry))
 
-    if lux > 200 and lux < 1000 :
-        time.sleep(5)
+    if 200 < lux < 1000:
+        utime.sleep(5)
     else:
-        time.sleep(300)
+        utime.sleep(300)
