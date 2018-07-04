@@ -5,7 +5,11 @@ class WIFI():
     """docstring for WIFI."""
     def __init__(self):
         known_nets = {
+<<<<<<< HEAD
             "Mateo's Kingdom": {"pwd": "b9MCU3sv"}
+=======
+            'SSID': {'pwd': '************'}
+>>>>>>> 165f171165d86a4e2998f025816f4b43bc76a38e
         }
 
         wlan = WLAN(mode=WLAN.STA)
