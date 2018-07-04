@@ -2,7 +2,6 @@ import usocket
 import ussl
 import utime
 import ujson
-import tools
 
 
 def request(method, url, json=None, headers={}, retry_num=5, retry_min_msec=500):

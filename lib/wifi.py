@@ -1,9 +1,9 @@
 import machine
 from network import WLAN
-import conf
+from conf import conf
 
 
-class WIFI():
+class WIFI:
     """docstring for WIFI."""
     def __init__(self):
         known_nets = conf.known_nets

@@ -1,10 +1,7 @@
-import pycom
 import utime
-import machine
-from tsl2561 import TSL2561
-import tools
+from lib import tools, tsl2561
 
-light_sensor = TSL2561()
+light_sensor = tsl2561.TSL2561()
 retry_num = 5
 retry_min_msec = 200
 
