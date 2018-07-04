@@ -9,8 +9,6 @@ def datetime_to_iso(time):
 
 
 def led_error(color=0x190000):
-    if pycom.heartbeat():
-        pycom.heartbeat(False)
     pycom.rgbled(color)
 
 
@@ -29,10 +27,6 @@ def send_values(body, send_failed=False):
         if r.get('status_code') == 202 or r.get('status_code') == 200:
             if send_failed:
                 pycom.rgbled(0)
-                #pycom.heartbeat(True)
-                #utime.sleep(1)
-                #pycom.heartbeat(False)
-
         else:
             print("{} - error: '{}' - message: {}".format(datetime_to_iso(utime.localtime()), r.get("status_code"), r.get("reason")))
             led_error()

@@ -29,9 +29,10 @@ class WIFI:
                 print("Connected to '"+net_to_use+"' with IP address: " + wlan.ifconfig()[0])
             else:
                 print("Could not find network: {}".format(known_nets))
+                tools.led_error()
                 sys.exit()
 
         except Exception as e:
             print("Failed to connect to any known network. \nnet_to_use: {}\nError: {}".format(net_to_use, e))
-            tools.led_error(color=0x7f7f00)
+            tools.led_error()
             sys.exit()
