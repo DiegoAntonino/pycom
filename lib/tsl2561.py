@@ -21,7 +21,7 @@ class TSL2561:
         #ch1 = ((data1[1]<<8) + data1[0])
         ch1 = ((data[3]<<8) + data[2])
 
-        return [ch0, ch1, self.get_lumi(ch0, ch1)]
+        return self.get_lumi(ch0, ch1)
 
     @staticmethod
     def get_lumi(ch0, ch1):

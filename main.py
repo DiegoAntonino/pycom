@@ -2,50 +2,36 @@
 import pycom
 import time
 import machine
-import sys
+from tsl2561 import TSL2561
 import tools
 
-from tsl2561 import TSL2561
-import urequests as requests
-
 light_sensor = TSL2561()
-URL = "https://run-east.att.io/b8c5703c726bc/b59e0c890712/fc61e0e361d821e/in/flow/test"
-#URL = "http://192.168.1.252:39500"
-headers = {"Content-Type" : "application/json"}
-pycom.heartbeat(False)
+retry_num = 5
+retry_min_msec = 200
 error = False
 
+time.sleep(1)
 print("Starting Main loop")
 while True:
-    ch0, ch1, lux  = light_sensor.get_lux()
+    lux  = light_sensor.get_lux()
     body = {
-    'lux': lux,
-    'ir_light': ch1,
-    'total_light': ch0,
-    'visible_light': ch0 - ch1
+        'lux': float(lux)
     }
+    #print(tools.datetime_toIso(time.localtime()),"-", body)
 
-    try:
-        r = requests.request("POST", URL, body, headers)
-    except ValueError as e:
-        print("{} - ValueError: {}".format(tools.datetime_toIso(time.localtime()), e) )
-        error = tools.led_error()
-    except NotImplementedError as e:
-        print("{} - NotImplementedError: {}".format(tools.datetime_toIso(time.localtime()), e) )
-        error = tools.led_error()
-    except Exception as e:
-        print("{} - Exception: {}".format(tools.datetime_toIso(time.localtime()), e) )
-        error = tools.led_error()
+    send_completed, error = tools.send_values(body, error)
+    retry = 0
+    while retry < retry_num and not send_completed:
+        time.sleep(pow(2, retry)*retry_min_msec/1000)
+        #Debug
+        #print("{} - retry: {}".format(tools.datetime_toIso(time.localtime()), retry) )
+        send_completed, error = tools.send_values(body, error)
+        retry+=1
+
+    if retry >= retry_num and not send_completed:
+        print ("Tried: {} times and it coudn't send values. Waiting 5 min".format(retry))
+
+    if lux > 200 and lux < 1000 :
+        time.sleep(5)
     else:
-        if r.get('status_code') == 202 or r.get('status_code') == 200:
-            if error:
-                error = False
-                pycom.heartbeat(True)
-                time.sleep(1)
-                pycom.heartbeat(False)
-
-        else:
-            print("error: {} - message: {}".format(r.get("status_code"), r.get("reason")))
-            error = tools.led_error()
-    finally:
         time.sleep(300)

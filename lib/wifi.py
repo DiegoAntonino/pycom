@@ -5,7 +5,7 @@ class WIFI():
     """docstring for WIFI."""
     def __init__(self):
         known_nets = {
-            'Osho_Home': {'pwd': 'b9MCU3sv'}
+            "Mateo's Kingdom": {"pwd": "b9MCU3sv"}
         }
 
         wlan = WLAN(mode=WLAN.STA)
