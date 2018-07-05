@@ -21,7 +21,7 @@ while True:
         retry += 1
 
     if retry >= retry_num and send_failed:
-        print("Tried: {} times and it coudn't send values.".format(retry))
+        print("Tried: {} times and it couldn't send values.".format(retry))
 
     if 200 < lux < 1000:
         utime.sleep(5)
