@@ -1,29 +1,36 @@
 import utime
 from lib import tools, tsl2561
 
-light_sensor = tsl2561.TSL2561()
 retry_num = 5
 retry_min_msec = 200
 
-utime.sleep(1)
-print("Starting Main loop")
-while True:
-    lux = light_sensor.get_lux()
-    body = {
-        'lux': lux
-    }
+try:
+    light_sensor = tsl2561.TSL2561()
+except Exception as e:
+    print("Failed to initialize Light Sensor. Error: {}".format(e))
+    tools.led_error()
+else:
+    print("Starting Main loop")
+    while True:
+        lux = 0
+        try:
+            lux = light_sensor.get_lux()
+        except Exception as e:
+            print("Failed to get luminosity. Error: {}".format(e))
+            tools.led_error()
+        else:
+            body = {'lux': lux}
+            send_failed = tools.send_values(body)
+            retry = 0
+            while retry < retry_num and send_failed:
+                utime.sleep(pow(2, retry)*retry_min_msec/1000)
+                send_failed = tools.send_values(body, send_failed)
+                retry += 1
 
-    send_failed = tools.send_values(body)
-    retry = 0
-    while retry < retry_num and send_failed:
-        utime.sleep(pow(2, retry)*retry_min_msec/1000)
-        send_failed = tools.send_values(body, send_failed)
-        retry += 1
-
-    if retry >= retry_num and send_failed:
-        print("Tried: {} times and it couldn't send values.".format(retry))
-
-    if 200 < lux < 1000:
-        utime.sleep(5)
-    else:
-        utime.sleep(300)
+            if retry >= retry_num and send_failed:
+                print("Tried: {} times and it couldn't send values.".format(retry))
+        finally:
+            if 200 < lux < 1000:
+                utime.sleep(5)
+            else:
+                utime.sleep(300)
