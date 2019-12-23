@@ -35,4 +35,4 @@ class WIFI:
         except Exception as e:
             print("Failed to connect to any known network. \nnet_to_use: {}\nError: {}".format(net_to_use, e))
             tools.led_error()
-            sys.exit()
+            raise e
