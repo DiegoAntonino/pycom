@@ -1,38 +1,38 @@
 import machine
 from network import WLAN
-import sys
 from conf import conf
-from lib import tools
+import gc
 
 
-class WIFI:
-    """docstring for WIFI."""
-    def __init__(self):
-        known_nets = conf.known_nets
-
+def wifi_connect():
+    """
+    Connect to the WiFi network based on the configuration. Fails silently if there is no configuration.
+    """
+    network_config = conf.known_nets
+    connected = False
+    if not network_config:
+        print("wifi - There is not Network Configuration")
+        return connected
+    try:
         wlan = WLAN(mode=WLAN.STA)
+
         print("Scanning wifi nets")
         available_nets = wlan.scan()
         nets = frozenset([e.ssid for e in available_nets])
 
-        known_nets_names = frozenset([key for key in known_nets])
-        net_to_use = list(nets & known_nets_names)
+        if list(network_config.keys())[0] in nets:
+            sec = [e.sec for e in available_nets if e.ssid == list(network_config.keys())[0]][0]
+            wlan.connect(list(network_config.keys())[0], (sec, list(network_config.values())[0]['pwd']), timeout=10000)
+            while not wlan.isconnected():
+                machine.idle()
+            print("Connected to {} with IP address: {}".format(wlan.ssid(), wlan.ifconfig()[0]))
+            connected = True
+        else:
+            print("Could not find network: {}".format(list(network_config.keys())[0]))
 
-        try:
-            if net_to_use:
-                net_to_use = net_to_use[0]
-                pwd = known_nets.get(net_to_use).get('pwd')
-                sec = [e.sec for e in available_nets if e.ssid == net_to_use][0]
-                wlan.connect(net_to_use, (sec, pwd), timeout=10000)
-                while not wlan.isconnected():
-                    machine.idle()  # save power while waiting
-                print("Connected to '"+net_to_use+"' with IP address: " + wlan.ifconfig()[0])
-            else:
-                print("Could not find network: {}".format(known_nets))
-                tools.led_error()
-                sys.exit()
+    except Exception as e:
+        print("Failed to connect to any known network. \nnet_to_use: {}\nError: {}".format(list(network_config.keys())[0], e))
 
-        except Exception as e:
-            print("Failed to connect to any known network. \nnet_to_use: {}\nError: {}".format(net_to_use, e))
-            tools.led_error()
-            raise e
+    finally:
+        gc.collect()
+        return connected

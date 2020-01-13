@@ -1,4 +1,8 @@
-import usocket
+import usocket as socket
+import uerrno
+import gc
+import utime
+
 
 class Response:
 
@@ -33,31 +37,48 @@ class Response:
 
 
 def request(method, url, data=None, json=None, headers={}, stream=None):
-    socketTimeOut = 5 # Seconds
+    socket_timeout = 5  # Seconds
+    gc.collect()
     try:
         proto, dummy, host, path = url.split("/", 3)
     except ValueError:
         proto, dummy, host = url.split("/", 2)
         path = ""
+
     if proto == "http:":
         port = 80
     elif proto == "https:":
         import ussl
         port = 443
     else:
-        raise ValueError("Unsupported protocol: " + proto)
+        raise ValueError("urequest - Unsupported protocol: " + proto)
 
     if ":" in host:
         host, port = host.split(":", 1)
         port = int(port)
 
-    ai = usocket.getaddrinfo(host, port, 0, usocket.SOCK_STREAM)
-    ai = ai[0]
-
-    s = usocket.socket(ai[0], ai[1], ai[2])
-    s.settimeout(socketTimeOut) # time in seconds
     try:
-        s.connect(ai[-1])
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM, socket.IPPROTO_TCP)
+        s.settimeout(socket_timeout)
+    except Exception as e:
+        print("urequest - Could not create a socket object. Exception: {}".format(e))
+        raise
+
+    #  ATTEMPT TO CONNECT
+    try:
+        s.connect((host, port))
+    except OSError as e:
+        if e.args[0] not in [uerrno.EINPROGRESS, uerrno.ETIMEDOUT]:
+            print("urequest - Error 'OSError' while trying to connect. Exception: {}".format(e))
+            s.close()
+            raise
+    except Exception as e:
+        print("urequest - Error while trying to connect. Exception: {}".format(e))
+        s.close()
+        raise
+
+    #  SEND DATA
+    try:
         if proto == "https:":
             s = ussl.wrap_socket(s, server_hostname=host)
         s.write(b"%s /%s HTTP/1.0\r\n" % (method, path))
@@ -80,30 +101,40 @@ def request(method, url, data=None, json=None, headers={}, stream=None):
         if data:
             s.write(data)
 
-        l = s.readline()
-        #print("l: ".format(l))
-        if l:
-            l = l.split(None, 2)
-            status = int(l[1])
-            reason = ""
-            if len(l) > 2:
-                reason = l[2].rstrip()
-            while True:
-                l = s.readline()
-                if not l or l == b"\r\n":
-                    break
-                #print(l)
-                if l.startswith(b"Transfer-Encoding:"):
-                    if b"chunked" in l:
-                        raise ValueError("Unsupported " + l)
-                elif l.startswith(b"Location:") and not 200 <= status <= 299:
-                    raise NotImplementedError("Redirects not yet supported")
-        else:
-            raise ValueError("Connection TimeOut; socketTimeOut: {} seconds".format(socketTimeOut))
-    except OSError:
+    except OSError as e:
+        if e.args[0] not in [uerrno.EINPROGRESS, uerrno.ETIMEDOUT]:
+            print("urequest - ERROR 'OSError' while trying to write. Exception: {}".format(e))
+            s.close()
+            raise
+    except Exception as e:
+        print("urequest -ERROR while trying to write. Exception: {}".format(e))
         s.close()
         raise
+
+    #  WAITING FOR A RESPONSE
+    try:
+        utime.sleep_ms(20)
+        l = s.readline()
+        l = l.split(None, 2)
+        status = int(l[1])
+        reason = ""
+        if len(l) > 2:
+            reason = l[2].rstrip()
+
+        while True:
+            l = s.readline()
+            if not l or l == b"\r\n":
+                break
+            if l.startswith(b"Transfer-Encoding:"):
+                if b"chunked" in l:
+                    s.close()
+                    raise ValueError("Unsupported " + l)
+            elif l.startswith(b"Location:") and not 200 <= status <= 299:
+                s.close()
+                raise NotImplementedError("Redirects not yet supported")
+
     except Exception:
+        print("urequest - ERROR waiting for a response. Exception: {}".format(e))
         s.close()
         raise
 
@@ -116,17 +147,22 @@ def request(method, url, data=None, json=None, headers={}, stream=None):
 def head(url, **kw):
     return request("HEAD", url, **kw)
 
+
 def get(url, **kw):
     return request("GET", url, **kw)
+
 
 def post(url, **kw):
     return request("POST", url, **kw)
 
+
 def put(url, **kw):
     return request("PUT", url, **kw)
 
+
 def patch(url, **kw):
     return request("PATCH", url, **kw)
+
 
 def delete(url, **kw):
     return request("DELETE", url, **kw)
