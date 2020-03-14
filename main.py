@@ -16,6 +16,7 @@ def read_lux(smartthings_handler):
     except Exception as e:
         tools.led_error()
         print("{} - main.read_lux - Enable to load TSL2561 Module, Exception: '{}'".format(tools.datetime_to_iso(utime.localtime()), e))
+        sys.print_exception(e)
         sys.exit(1)
 
     while True:
@@ -23,15 +24,34 @@ def read_lux(smartthings_handler):
             lux = light_sensor.get_lux()
         except Exception as e:
             print("{} - main.read_lux - Failed to get luminosity. Exception: '{}'".format(tools.datetime_to_iso(utime.localtime()), e))
+            sys.print_exception(e)
             tools.led_error(0xFFFF00)
         else:
-            if lux < 150 or lux > 450:
-                if abs(lux - previous_lux) > 90:
+            if lux <= 150:
+                if abs(lux - previous_lux) > 50:
+                    body = {'lux': lux}
+                    smartthings_handler.notify(body)
+                    previous_lux = lux if lux else 1
+            elif 150 < lux <= 300:
+                if abs(lux - previous_lux) > 30:
                     body = {'lux': lux}
                     smartthings_handler.notify(body)
                     previous_lux = lux
-            else:
-                if abs(lux - previous_lux) > 30:
+            elif 300 < lux <= 500:
+                # report if variance is more than 10%
+                if 100*abs(lux - previous_lux)/previous_lux > 10:
+                    body = {'lux': lux}
+                    smartthings_handler.notify(body)
+                    previous_lux = lux
+            elif 500 < lux <= 1000:
+                # report if variance is more than 15%
+                if 100*abs(lux - previous_lux)/previous_lux > 15:
+                    body = {'lux': lux}
+                    smartthings_handler.notify(body)
+                    previous_lux = lux
+            elif 1000 < lux:
+                # report if variance is more than 20%
+                if 100*abs(lux - previous_lux)/previous_lux > 20:
                     body = {'lux': lux}
                     smartthings_handler.notify(body)
                     previous_lux = lux
@@ -89,5 +109,6 @@ try:
 
 except Exception as e:
     print(e)
+    sys.print_exception(e)
 finally:
     gc.collect()

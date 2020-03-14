@@ -1,4 +1,5 @@
 import usocket as socket
+import uselect
 import uerrno
 import gc
 import utime
@@ -37,7 +38,7 @@ class Response:
 
 
 def request(method, url, data=None, json=None, headers={}, stream=None):
-    socket_timeout = 5  # Seconds
+    socket_timeout = 1000  # milliseconds
     gc.collect()
     try:
         proto, dummy, host, path = url.split("/", 3)
@@ -59,7 +60,7 @@ def request(method, url, data=None, json=None, headers={}, stream=None):
 
     try:
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM, socket.IPPROTO_TCP)
-        s.settimeout(socket_timeout)
+        #s.setblocking(False)
     except Exception as e:
         print("urequest - Could not create a socket object. Exception: {}".format(e))
         raise
@@ -82,7 +83,7 @@ def request(method, url, data=None, json=None, headers={}, stream=None):
         if proto == "https:":
             s = ussl.wrap_socket(s, server_hostname=host)
         s.write(b"%s /%s HTTP/1.0\r\n" % (method, path))
-        if not "Host" in headers:
+        if "Host" not in headers:
             s.write(b"Host: %s\r\n" % host)
         # Iterate over keys to avoid tuple alloc
         for k in headers:
@@ -100,7 +101,6 @@ def request(method, url, data=None, json=None, headers={}, stream=None):
         s.write(b"\r\n")
         if data:
             s.write(data)
-
     except OSError as e:
         if e.args[0] not in [uerrno.EINPROGRESS, uerrno.ETIMEDOUT]:
             print("urequest - ERROR 'OSError' while trying to write. Exception: {}".format(e))
@@ -112,36 +112,56 @@ def request(method, url, data=None, json=None, headers={}, stream=None):
         raise
 
     #  WAITING FOR A RESPONSE
+    #s.settimeout(socket_timeout)
     try:
-        utime.sleep_ms(20)
-        l = s.readline()
-        l = l.split(None, 2)
-        status = int(l[1])
-        reason = ""
-        if len(l) > 2:
-            reason = l[2].rstrip()
+        # utime.sleep_ms(20)
+        poller = uselect.poll()
+        poller.register(s, uselect.POLLIN)
+        res = poller.poll(socket_timeout)  # time in milliseconds
+        poller.unregister(s)
 
-        while True:
+        if res:
             l = s.readline()
-            if not l or l == b"\r\n":
-                break
-            if l.startswith(b"Transfer-Encoding:"):
-                if b"chunked" in l:
-                    s.close()
-                    raise ValueError("Unsupported " + l)
-            elif l.startswith(b"Location:") and not 200 <= status <= 299:
-                s.close()
-                raise NotImplementedError("Redirects not yet supported")
+            if len(l) == 0:
+                print("Didn't receive 'l' data!")
+                #s.close()
+                raise RuntimeError("Didn't receive 'l' data!")
 
-    except Exception:
+            l = l.split(None, 2)
+            status = int(l[1])
+            reason = ""
+            if len(l) > 2:
+                reason = l[2].rstrip()
+
+            while True:
+                l = s.readline()
+                if not l or l == b"\r\n":
+                    break
+                if l.startswith(b"Transfer-Encoding:"):
+                    if b"chunked" in l:
+                        #s.close()
+                        raise ValueError("Unsupported " + l)
+                elif l.startswith(b"Location:") and not 200 <= status <= 299:
+                    #s.close()
+                    raise NotImplementedError("Redirects not yet supported")
+        else:
+            #s.close()
+            print("Didn't receive data! [Timeout {}s]".format(socket_timeout/1000))
+            raise RuntimeError("Didn't receive data! [Timeout {}s]".format(socket_timeout/1000))
+
+    #except socket.timeout:
+    #    print("Didn't receive data! [Timeout {}s]".format(socket_timeout))
+    #    s.close()
+    #    raise
+    except Exception as e:
         print("urequest - ERROR waiting for a response. Exception: {}".format(e))
         s.close()
         raise
-
-    resp = Response(s)
-    resp.status_code = status
-    resp.reason = reason
-    return resp
+    else:
+        resp = Response(s)
+        resp.status_code = status
+        resp.reason = reason
+        return resp
 
 
 def head(url, **kw):
