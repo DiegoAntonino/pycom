@@ -27,31 +27,36 @@ def read_lux(smartthings_handler):
             sys.print_exception(e)
             tools.led_error(0xFFFF00)
         else:
-            if lux <= 150:
-                if abs(lux - previous_lux) > 50:
+            if lux <= 50:
+                if abs(lux - previous_lux) > 10:
                     body = {'lux': lux}
                     smartthings_handler.notify(body)
                     previous_lux = lux if lux else 1
-            elif 150 < lux <= 300:
-                if abs(lux - previous_lux) > 30:
+            elif 50 < lux <= 250:
+                if abs(lux - previous_lux) > 10:
+                    body = {'lux': lux}
+                    smartthings_handler.notify(body)
+                    previous_lux = lux
+            elif 250 < lux <= 300:
+                if abs(lux - previous_lux) > 50:
                     body = {'lux': lux}
                     smartthings_handler.notify(body)
                     previous_lux = lux
             elif 300 < lux <= 500:
-                # report if variance is more than 10%
+                # report if variance is more than 15%
                 if 100*abs(lux - previous_lux)/previous_lux > 10:
                     body = {'lux': lux}
                     smartthings_handler.notify(body)
                     previous_lux = lux
             elif 500 < lux <= 1000:
-                # report if variance is more than 15%
-                if 100*abs(lux - previous_lux)/previous_lux > 15:
+                # report if variance is more than 20%
+                if 100*abs(lux - previous_lux)/previous_lux > 20:
                     body = {'lux': lux}
                     smartthings_handler.notify(body)
                     previous_lux = lux
             elif 1000 < lux:
-                # report if variance is more than 20%
-                if 100*abs(lux - previous_lux)/previous_lux > 20:
+                # report if variance is more than 25%
+                if 100*abs(lux - previous_lux)/previous_lux > 25:
                     body = {'lux': lux}
                     smartthings_handler.notify(body)
                     previous_lux = lux
