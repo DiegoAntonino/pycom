@@ -27,12 +27,12 @@ def read_lux(smartthings_handler):
             sys.print_exception(e)
             tools.led_error(0xFFFF00)
         else:
-            if lux <= 50:
+            if lux <= 100:
                 if abs(lux - previous_lux) > 15:
                     body = {'lux': lux}
                     smartthings_handler.notify(body)
                     previous_lux = lux if lux else 1
-            elif 50 < lux <= 250:
+            elif 100 < lux <= 250:
                 if abs(lux - previous_lux) > 10:
                     body = {'lux': lux}
                     smartthings_handler.notify(body)
