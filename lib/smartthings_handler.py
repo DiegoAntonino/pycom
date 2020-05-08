@@ -16,7 +16,7 @@ class Smartthings():
     def notify(self, body):
         try:
             attempts = self.retry_num
-            #print("{} - Smartthings.notify, Sent body: {}".format(datetime_to_iso(utime.localtime()), body))
+            print("{} - Smartthings.notify, Sent body: {}".format(datetime_to_iso(utime.localtime()), body))
 
             while attempts and self.send_values(body):
                 attempts -= 1
