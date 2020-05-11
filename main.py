@@ -36,26 +36,26 @@ def read_lux(smartthings_handler):
                     body = {'lux': lux}
                     smartthings_handler.notify(body)
                     previous_lux = lux
-            elif 80 < lux <= 300:
+            elif 80 < lux <= 700:
                 if abs(lux - previous_lux) > 10:
                     body = {'lux': lux}
                     smartthings_handler.notify(body)
                     previous_lux = lux
-            elif 300 < lux <= 700:
-                # report if variance is more than 10%
+            elif 700 < lux <= 1000:
+                # report if variance is more than 5%
                 previous_lux = previous_lux if previous_lux else 0.01
-                if 100*abs((lux - previous_lux)/previous_lux) > 10:
+                if 100*abs((lux - previous_lux)/previous_lux) > 5:
                     body = {'lux': lux}
                     smartthings_handler.notify(body)
                     previous_lux = lux
-            elif 700 < lux <= 1000:
+            elif 1000 < lux <= 1500:
                 # report if variance is more than 20%
                 previous_lux = previous_lux if previous_lux else 0.01
                 if 100*abs((lux - previous_lux)/previous_lux) > 20:
                     body = {'lux': lux}
                     smartthings_handler.notify(body)
                     previous_lux = lux
-            elif 1000 < lux:
+            elif 1500 < lux:
                 # report if variance is more than 25%
                 previous_lux = previous_lux if previous_lux else 0.01
                 if 100*abs((lux - previous_lux)/previous_lux) > 25:
